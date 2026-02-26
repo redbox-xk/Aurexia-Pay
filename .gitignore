@@ -1,1 +1,59 @@
-TODO
+# Binaries
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+node_modules/
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Build artifacts
+dist/
+out/
+.next/
+coverage/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Secrets
+**/secrets/**
+**/*.pem
+**/*.key
+**/*.crt
