@@ -1,0 +1,8 @@
+{
+  "config": {
+    "chainId": 666
+  },
+  "gasLimit": "0x1C9C380",
+  "difficulty": "0x1",
+  "baseFeePerGas": "0x3B9ACA00"
+}
