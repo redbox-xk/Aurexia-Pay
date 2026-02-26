@@ -1,0 +1,3 @@
+# consensus
+
+TODO: document.

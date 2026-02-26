@@ -1,0 +1,3 @@
+# go-sdk
+
+TODO: document.

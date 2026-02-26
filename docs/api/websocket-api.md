@@ -1,0 +1,3 @@
+# websocket-api
+
+TODO: document.
