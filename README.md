@@ -1,180 +1,211 @@
-```markdown
-# 🚀 AUREXIA-CAPITAL - The Ultimate Payment Layer 1 Blockchain
+# Aurexia Payment Layer 1 Blockchain
+
+A high-performance, Stripe-like payment processing blockchain with 100,000 TPS capacity and 99.999% uptime.
+
+## Overview
+
+Aurexia is a Layer 1 blockchain designed specifically for payment processing with:
+
+- **100,000 TPS** - Visa-scale throughput
+- **0.5s Block Time** - Near-instant finality
+- **99.999% Uptime** - Enterprise-grade reliability
+- **Stripe-Like API** - Familiar payment integration
+- **0.29% + $0.005 Fees** - Industry-leading pricing
+- **Cross-Chain Bridges** - Multi-chain liquidity
+
+## Architecture
+
+### Core Components
 
 ```
-
-║                                                                                    ║
-║                    THE ULTIMATE PAYMENT LAYER 1 BLOCKCHAIN                        ║
-║                    Stripe-like Simplicity • Visa-scale Throughput                 ║
-║                    99.999% Uptime • 100,000 TPS • 0.5s Finality                   ║
-╚══════════════════════════════════════════════════════════════════════════════════╝
-
+┌─────────────────────────────────────────────────────┐
+│           Frontend (Next.js Dashboard)              │
+├─────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────┐   │
+│  │         API Gateway (Go + REST)              │   │
+│  └──────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────┐   │
+│  │   Payment Processor (Python FastAPI)         │   │
+│  └──────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────┐   │
+│  │  Aurexia Consensus Layer (Go/Rust)           │   │
+│  │  - AurexiaBFT Consensus                      │   │
+│  │  - 21 Validators                             │   │
+│  │  - Instant Finality                          │   │
+│  └──────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────┤
+│  Smart Contracts (Solidity)                         │
+│  ├─ AurexiaToken (AURX)                            │
+│  ├─ StakingPool                                    │
+│  ├─ PaymentRouter                                  │
+│  └─ MerchantRegistry                               │
+└─────────────────────────────────────────────────────┘
 ```
 
-## 🎯 Quick Start
+## Quick Start
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Node.js 18+
+- Go 1.21+
+- Python 3.11+
+
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/aurexia-capital/aurexia.git
-cd aurexia
+git clone https://github.com/aurexia/aurexia-pay.git
+cd aurexia-pay
 
-# Build everything
-make build
+# Run the initialization script
+chmod +x scripts/setup/init-system.sh
+./scripts/setup/init-system.sh
 
-# Run API gateway locally
-make run-api
+# Access the system
+# Frontend: http://localhost:3000
+# API: http://localhost:8000
+# Monitoring: http://localhost:3001
+```
 
-# In another terminal, test the API
-curl http://localhost:8080/healthz
-curl -X POST http://localhost:8080/api/v1/payments \
+### Docker Setup
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+## Payment Processing Flow
+
+### 1. Create Payment Intent
+
+```bash
+curl -X POST http://localhost:8000/api/v1/payments \
   -H "Content-Type: application/json" \
-  -d '{"amount":1000,"currency":"usd"}'
-
-# Run frontend
-cd frontend/web && npm install && npm run dev
-
-# Visit http://localhost:3000
+  -d '{
+    "amount": 1000,
+    "currency": "AURX",
+    "description": "Premium subscription"
+  }'
 ```
 
-📊 Performance
-
-Metric Target
-Transaction Throughput 100,000 TPS
-Block Time 0.5 seconds
-Finality 1 second
-API Response Time < 50ms
-Uptime SLA 99.999%
-
-🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Frontend (Next.js)                   │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Dashboard  │  │  Payments   │  │  Bridge     │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      API Gateway (Go)                        │
-│              REST API • WebSockets • GraphQL                 │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Aurexia Mainnet (Layer 1)                  │
-│    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│    │ Consensus   │  │    State    │  │    Bridge   │       │
-│    │ (AurexiaBFT)│  │             │  │             │       │
-│    └─────────────┘  └─────────────┘  └─────────────┘       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-🔧 Components
-
-Backend API Gateway (Go)
-
-· REST API with Stripe-compatible endpoints
-· CORS support for web integration
-· Request validation and logging
-· Health checks and monitoring
-
-Frontend (Next.js)
-
-· Modern React with TypeScript
-· Tailwind CSS for styling
-· Web3 wallet integration
-· Responsive dashboard
-
-UI Components
-
-· Button, Card, Input, Label
-· Modal, Toast notifications
-· Switch, Checkbox
-· Alert dialogs
-
-📝 API Examples
+### 2. Confirm Payment
 
 ```bash
-# Health check
-curl http://localhost:8080/healthz
-
-# Create payment
-curl -X POST http://localhost:8080/api/v1/payments \
+curl -X POST http://localhost:8000/api/v1/payments/pi_123/confirm \
   -H "Content-Type: application/json" \
-  -d '{"amount":1000,"currency":"usd","description":"Test payment"}'
-
-# Get payment status
-curl http://localhost:8080/api/v1/payments/pi_123456
+  -d '{
+    "payer_address": "0x742d35Cc6634C0532925a3b844Bc5e8ef2F29eD",
+    "transaction_hash": "0xabc123..."
+  }'
 ```
 
-🚢 Deployment
+## Smart Contracts
+
+### AURX Token
+- Total Supply: 1 billion
+- Distribution: Foundation (200M), Team (150M), Community (300M), Ecosystem (200M), Liquidity (150M)
+
+### Staking Pool
+- APY: 12-24% based on lockup period
+- Minimum Stake: 100 AURX
+- Validator Requirements: 1,000 AURX
+
+### Payment Router
+- Stripe-like payment intents
+- Refund processing
+- Settlement tracking
+- Webhook notifications
+
+### Merchant Registry
+- KYC verification
+- Tier-based limits
+- Transaction monitoring
+
+## API Reference
+
+### Payment Endpoints
+```
+POST   /api/v1/payments                      # Create payment intent
+GET    /api/v1/payments/{id}                # Get payment status
+POST   /api/v1/payments/{id}/confirm        # Confirm payment
+POST   /api/v1/payments/{id}/refund         # Refund payment
+GET    /api/v1/merchants/{id}/settlements   # Get settlements
+```
+
+### Health & Status
+```
+GET    /healthz                             # Health check
+GET    /api/v1/analytics                    # Platform analytics
+GET    /metrics                             # Prometheus metrics
+```
+
+## Monitoring
+
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001 (admin/aurexia2026)
+
+## Configuration
+
+Environment variables in `.env.local`:
 
 ```bash
-# Deploy to development
-make deploy-dev
-
-# Deploy to production
-make deploy-prod
-
-# Deploy smart contracts
-make deploy-contracts
+NETWORK=mainnet
+RPC_URL=http://localhost:8545
+API_PORT=8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-📚 Documentation
+## Development
 
-· API Reference
-· Integration Guide
-· Token Generator
-· Bridge Usage
-
-🛠️ Built With
-
-· Consensus: Go • CometBFT
-· Backend: Go • Gorilla Mux • Zap
-· Frontend: Next.js • React • TypeScript
-· Smart Contracts: Solidity • Hardhat
-· Infrastructure: Docker • Kubernetes • Terraform
-
-🤝 Contributing
-
-Please read CONTRIBUTING.md for details.
-
-📄 License
-
-This project is licensed under the MIT License - see LICENSE.
-
-📞 Support
-
-· Website: aurexia.capital
-· Email: support@aurexia.capital
-· Twitter: @aurexia_capital
-· Discord: discord.gg/aurexia
-
----
-
-Built with ❤️ for the future of payments
-
+### Project Structure
+```
+aurexia-pay/
+├── consensus/              # Core blockchain
+├── contracts/             # Smart contracts
+├── backend/              # Backend services
+├── frontend/             # Next.js dashboard
+├── infrastructure/       # DevOps & deployment
+└── scripts/              # Deployment & setup
 ```
 
-## ✅ **TESTING COMMANDS**
+### Running Locally
 
 ```bash
-# Test API gateway
-cd backend/cmd/api-gateway
-go run main.go &
-curl http://localhost:8080/healthz
-curl -X POST http://localhost:8080/api/v1/payments -H "Content-Type: application/json" -d '{"amount":1000,"currency":"usd"}'
+# Terminal 1: Consensus node
+cd consensus && go run main.go
 
-# Test frontend
-cd frontend/web
-npm install
-npm run dev
-# Visit http://localhost:3000
+# Terminal 2: API gateway
+cd backend && go run cmd/api-gateway/main.go
 
-# Test consensus node (if Go installed)
-cd consensus
-go build ./cmd/aurexiad
-./aurexiad --help
+# Terminal 3: Payment processor
+cd backend && python cmd/payment-processor/main.py
+
+# Terminal 4: Frontend
+cd frontend/web && npm run dev
 ```
+
+## Performance Metrics
+
+- **TPS**: 100,000+ transactions per second
+- **Block Time**: 0.5 seconds
+- **Finality**: Instant
+- **Gas Limit**: 30,000,000 per block
+- **Transaction Cost**: 0.29% + $0.005
+
+## Support & Documentation
+
+- **API Docs**: https://api.aurexia.io/docs
+- **Email**: support@aurexia.io
+
+## License
+
+MIT License - See LICENSE file for details
