@@ -1,1 +1,19 @@
-TODO
+# Snyk policy file
+exclude:
+  global:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/*.test.js"
+    - "**/*_test.go"
+    - "**/docs/**"
+package-managers:
+  - npm
+  - yarn
+  - gomodules
+  - pip
+  - cargo
+language-settings:
+  javascript: true
+  golang: true
+  python: true
+  rust: true
