@@ -1,1 +1,23 @@
-{}
+{
+  "name": "aurexia-capital",
+  "version": "1.0.0",
+  "description": "The Ultimate Payment Layer 1 Blockchain",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:contracts && npm run build:frontend",
+    "build:contracts": "cd contracts && npx hardhat compile",
+    "build:frontend": "cd frontend/web && npm run build",
+    "test": "npm run test:contracts && npm run test:frontend",
+    "test:contracts": "cd contracts && npx hardhat test",
+    "test:frontend": "cd frontend/web && npm test",
+    "dev": "cd frontend/web && npm run dev",
+    "deploy": "cd contracts && npx hardhat run scripts/deploy/deploy-contracts.js"
+  },
+  "keywords": ["blockchain", "payments", "layer1", "crypto"],
+  "author": "Aurexia Capital",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.19.0"
+  }
+}
