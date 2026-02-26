@@ -27,6 +27,13 @@ make build-consensus
 # 2) Run test suite
 make test
 
+# 3) Generate deployment artifacts (works from repo root or scripts/ )
+node scripts/deploy_l1.js
+
+# 4) Inspect chain config
+cat config.toml
+cat genesis.json
+cat consensus/genesis.json
 # 3) Inspect chain config
 cat config.toml
 cat genesis.json
