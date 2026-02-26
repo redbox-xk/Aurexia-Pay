@@ -1,21 +1,21 @@
-import { ethers } from 'ethers'
+import { BrowserProvider, formatEther, parseEther } from 'ethers'
 
 export class Web3Client {
-  private provider: ethers.BrowserProvider | null = null
-  private signer: ethers.Signer | null = null
+  private provider: BrowserProvider | null = null
+  private signer: any = null
 
   async connect(): Promise<boolean> {
-    if (typeof window === 'undefined' || !window.ethereum) {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
       throw new Error('No Web3 provider found')
     }
 
     try {
-      this.provider = new ethers.BrowserProvider(window.ethereum)
+      this.provider = new BrowserProvider((window as any).ethereum)
       await this.provider.send('eth_requestAccounts', [])
       this.signer = await this.provider.getSigner()
       return true
     } catch (error) {
-      console.error('Failed to connect wallet:', error)
+      console.error('[v0] Failed to connect wallet:', error)
       return false
     }
   }
@@ -33,7 +33,7 @@ export class Web3Client {
   async getBalance(address: string): Promise<string> {
     if (!this.provider) return '0'
     const balance = await this.provider.getBalance(address)
-    return ethers.formatEther(balance)
+    return formatEther(balance)
   }
 
   async signMessage(message: string): Promise<string> {
@@ -46,7 +46,7 @@ export class Web3Client {
     
     const tx = await this.signer.sendTransaction({
       to,
-      value: ethers.parseEther(value),
+      value: parseEther(value),
     })
     
     return await tx.wait()

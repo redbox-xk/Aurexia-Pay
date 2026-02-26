@@ -11,7 +11,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-    unoptimized: true, // For deployment compatibility
+    unoptimized: true,
   },
 
   // Transpile dependencies
@@ -28,15 +28,11 @@ const nextConfig = {
   // SWR cache configuration
   swcMinify: true,
 
-  // Ensure proper module resolution
-  webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      path: false,
-      crypto: false,
-    }
-    return config
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {
+    resolveAlias: {
+      '@/*': './*',
+    },
   },
 
   // Environment variables
