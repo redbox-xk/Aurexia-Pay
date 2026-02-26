@@ -35,6 +35,13 @@ test:
 		go test ./... || (echo "⚠️ Tests skipped due to incomplete Go module/package layout." && exit 0); \
 		echo "✅ Go test step completed"; \
 	}
+	go build $(LDFLAGS) -o build/aurexiad ./consensus/...
+	@echo "✅ Consensus node build completed"
+
+test:
+	@echo "🧪 Running Go tests..."
+	go test ./...
+	@echo "✅ Go tests completed"
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."
