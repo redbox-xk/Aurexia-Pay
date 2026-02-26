@@ -1,1 +1,26 @@
-# TODO: configuration
+title = "Aurexia-Capital Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+description = "Aurexia API Key"
+regex = '''aur_(live|test)_[a-zA-Z0-9]{24}'''
+tags = ["key", "aurexia", "api"]
+secretGroup = 1
+
+[[rules]]
+description = "Aurexia Private Key"
+regex = '''[a-fA-F0-9]{64}'''
+tags = ["key", "aurexia", "private"]
+
+[allowlist]
+description = "Allowlisted files"
+paths = [
+    "**/*.test.js",
+    "**/*_test.go",
+    "**/test/**",
+    "**/tests/**",
+    "**/docs/**",
+    "**/*.md"
+]
