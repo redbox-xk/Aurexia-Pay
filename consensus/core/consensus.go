@@ -9,7 +9,7 @@ import (
 )
 
 // AurexiaBFT - Byzantine Fault Tolerant Consensus
-// Hybrid PoS with fast finality (2-second blocks)
+// Hybrid PoS with payment-grade performance targets (0.5-second blocks)
 
 type Block struct {
 	Height       uint64
@@ -64,11 +64,11 @@ func NewConsensusEngine() *ConsensusEngine {
 	return &ConsensusEngine{
 		validators:    make(map[string]*Validator),
 		blockchain:    make([]*Block, 0),
-		blockTime:     2 * time.Second,
-		epochLength:   100,
+		blockTime:     500 * time.Millisecond,
+		epochLength:   43_200,
 		totalStake:    big.NewInt(0),
 		minStake:      big.NewInt(1000000), // 1M AURX minimum stake
-		maxValidators: 100,
+		maxValidators: 1000,
 	}
 }
 
@@ -193,10 +193,10 @@ func GetMainnetConfig() map[string]interface{} {
 		"chainId":       666,
 		"networkName":   "Aurexia Mainnet",
 		"currency":      "AURX",
-		"blockTime":     2,
-		"epochLength":   100,
+		"blockTime":     0.5,
+		"epochLength":   43200,
 		"minStake":      "1000000000000000000000000",
-		"maxValidators": 100,
+		"maxValidators": 1000,
 		"gasPrice":      "1000000000",
 		"rpcPort":       8545,
 		"p2pPort":       30303,
