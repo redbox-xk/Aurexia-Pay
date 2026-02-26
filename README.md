@@ -34,6 +34,9 @@ node scripts/deploy_l1.js
 cat config.toml
 cat genesis.json
 cat consensus/genesis.json
+# 3) Inspect chain config
+cat config.toml
+cat genesis.json
 ```
 
 ## Mainnet Parameters (Current Defaults)
