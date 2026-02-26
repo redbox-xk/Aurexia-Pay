@@ -13,11 +13,20 @@
     "dev": "cd frontend/web && npm run dev",
     "deploy": "cd contracts && npx hardhat run scripts/deploy/deploy-contracts.js"
   },
-  "keywords": ["blockchain", "payments", "layer1", "crypto"],
+  "keywords": [
+    "blockchain",
+    "payments",
+    "layer1",
+    "crypto"
+  ],
   "author": "Aurexia Capital",
   "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "react": "^19.2.4",
+    "web3": "^4.16.0"
   }
 }
