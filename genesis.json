@@ -1,0 +1,42 @@
+{
+  "genesis_time": "2026-02-27T00:00:00Z",
+  "chain_id": 666,
+  "initial_height": 1,
+  "consensus_params": {
+    "block": {
+      "max_bytes": 10485760,
+      "max_gas": 30000000,
+      "time_iota_ms": 500
+    },
+    "evidence": {
+      "max_age_num_blocks": 100000,
+      "max_age_duration": "504h",
+      "max_bytes": 1048576
+    },
+    "validator": {
+      "pub_key_types": ["ed25519", "secp256k1"]
+    }
+  },
+  "app_hash": "",
+  "app_state": {
+    "accounts": [
+      {
+        "address": "0xE430b07F7B168E77B07b29482DbF89EafA53f484",
+        "balance": "10000000000000000000000000"
+      }
+    ],
+    "validators": [
+      {
+        "address": "0x1111111111111111111111111111111111111111",
+        "pub_key": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "power": 1000000,
+        "name": "Validator 1",
+        "commission": 500
+      }
+    ],
+    "staking": {
+      "unbonding_time": "504h",
+      "max_validators": 1000
+    }
+  }
+}

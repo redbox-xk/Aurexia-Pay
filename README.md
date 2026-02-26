@@ -1,18 +1,52 @@
-# Aurexia-Capital
+# 🚀 Aurexia-Capital
 
-The Stripe of Crypto — own L1 + token generator.
+A payment-focused Layer 1 blockchain concept focused on Stripe-like developer ergonomics and institutional reliability.
 
-## Components
+## Vision
 
-- **Layer 1 (Aurexia Mainnet):** PoS with AurexiaBFT and fast finality.
-- **Token Generator Factory:** No-code token creation with configurable fees.
-- **Cross-Chain Bridge:** Unified routing across major EVM chains.
-- **Frontend:** Token generator flow and deployment UX.
-- **Docs:** Whitepaper and environment setup templates.
+Aurexia-Capital aims to combine:
+- **Stripe-like simplicity** for API consumers.
+- **Visa-scale throughput goals** (targeting up to 100,000 TPS).
+- **Low-latency finality objectives** (sub-second block cadence and near-instant confirmation).
+- **Institutional-grade operational posture** with clear validator/economic constraints.
+
+## Repository Snapshot
+
+- `consensus/` — consensus engine prototype and chain configuration.
+- `contracts/` — smart contract modules for token generation and bridge routing.
+- `frontend/` — token generator UX components.
+- `docs/` — technical documentation and whitepaper material.
+- `scripts/` — deployment helper scripts.
 
 ## Quick Start
 
 ```bash
-cp .env.example .env
+# 1) Build consensus prototype
+make build-consensus
+
+# 2) Run test suite
+make test
+
+# 3) Generate deployment artifacts (works from repo root or scripts/ )
 node scripts/deploy_l1.js
+
+# 4) Inspect chain config
+cat config.toml
+cat genesis.json
+cat consensus/genesis.json
 ```
+
+## Mainnet Parameters (Current Defaults)
+
+| Parameter | Value |
+|---|---|
+| Chain ID | `666` |
+| Block Time | `0.5s` |
+| Block Gas Limit | `30,000,000` |
+| Max Validators | `1000` |
+| Epoch Length | `43,200` |
+| Min Validator Stake | `1,000,000 AURX` |
+
+## Status
+
+This repository currently contains a foundation/prototype layout for Aurexia-Capital. The consensus/state engine and infrastructure are scaffolding-oriented and intended to evolve into production-grade modules.
