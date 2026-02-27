@@ -1,121 +1,92 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 
-/**
- * AURX Token - The native currency of Aurexia Payment Layer 1
- * 
- * Features:
- * - 1 billion total supply
- * - 18 decimals precision
- * - Burnable tokens
- * - Role-based access control
- * - Snapshot capability for governance
- */
-contract AurexiaToken is ERC20, ERC20Burnable, AccessControl, ERC20Snapshot {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant SNAPSHOT_ROLE = keccak256("SNAPSHOT_ROLE");
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-
-    uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 10 ** 18; // 1 billion AURX
-
-    // Supply distribution
-    uint256 public constant FOUNDATION_SUPPLY = 200_000_000 * 10 ** 18;
-    uint256 public constant TEAM_SUPPLY = 150_000_000 * 10 ** 18;
-    uint256 public constant COMMUNITY_SUPPLY = 300_000_000 * 10 ** 18;
-    uint256 public constant ECOSYSTEM_SUPPLY = 200_000_000 * 10 ** 18;
-    uint256 public constant LIQUIDITY_SUPPLY = 150_000_000 * 10 ** 18;
-
-    bool public paused;
-
+contract AurexiaToken is ERC20, Ownable, Pausable, ERC20Burnable, ERC20Snapshot {
+    uint8 private _decimals;
+    mapping(address => bool) public blacklist;
+    
+    event BlacklistAdded(address indexed account);
+    event BlacklistRemoved(address indexed account);
     event TokensMinted(address indexed to, uint256 amount);
     event TokensBurned(address indexed from, uint256 amount);
-    event Paused(address indexed by);
-    event Unpaused(address indexed by);
-
+    
     constructor(
-        address foundation,
-        address team,
-        address community,
-        address ecosystem,
-        address liquidity
-    ) ERC20("Aurexia", "AURX") {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender);
-        _setupRole(SNAPSHOT_ROLE, msg.sender);
-        _setupRole(PAUSER_ROLE, msg.sender);
-
-        // Distribute tokens
-        _mint(foundation, FOUNDATION_SUPPLY);
-        _mint(team, TEAM_SUPPLY);
-        _mint(community, COMMUNITY_SUPPLY);
-        _mint(ecosystem, ECOSYSTEM_SUPPLY);
-        _mint(liquidity, LIQUIDITY_SUPPLY);
-
-        require(totalSupply() == TOTAL_SUPPLY, "Supply mismatch");
+        string memory name,
+        string memory symbol,
+        uint8 decimals_,
+        uint256 initialSupply,
+        address initialOwner
+    ) ERC20(name, symbol) {
+        _decimals = decimals_;
+        _mint(initialOwner, initialSupply * 10 ** decimals_);
+        transferOwnership(initialOwner);
     }
-
-    function snapshot() public onlyRole(SNAPSHOT_ROLE) {
-        _snapshot();
+    
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
     }
-
-    function pause() public onlyRole(PAUSER_ROLE) {
-        paused = true;
-        emit Paused(msg.sender);
+    
+    function pause() external onlyOwner {
+        _pause();
     }
-
-    function unpause() public onlyRole(PAUSER_ROLE) {
-        paused = false;
-        emit Unpaused(msg.sender);
+    
+    function unpause() external onlyOwner {
+        _unpause();
     }
-
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
-        require(!paused, "Minting is paused");
+    
+    function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
         emit TokensMinted(to, amount);
     }
-
+    
     function burn(uint256 amount) public override {
         super.burn(amount);
-        emit TokensBurned(msg.sender, amount);
+        emit TokensBurned(_msgSender(), amount);
     }
-
+    
     function burnFrom(address account, uint256 amount) public override {
         super.burnFrom(account, amount);
         emit TokensBurned(account, amount);
     }
-
+    
+    function snapshot() external onlyOwner returns (uint256) {
+        return _snapshot();
+    }
+    
+    function addToBlacklist(address account) external onlyOwner {
+        require(account != address(0), "Invalid address");
+        require(!blacklist[account], "Already blacklisted");
+        blacklist[account] = true;
+        emit BlacklistAdded(account);
+    }
+    
+    function removeFromBlacklist(address account) external onlyOwner {
+        require(blacklist[account], "Not blacklisted");
+        blacklist[account] = false;
+        emit BlacklistRemoved(account);
+    }
+    
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 amount
-    ) internal override(ERC20, ERC20Snapshot) {
-        require(!paused, "Token transfers are paused");
+    ) internal virtual override(ERC20, ERC20Snapshot) whenNotPaused {
+        require(!blacklist[from] && !blacklist[to], "Address is blacklisted");
         super._beforeTokenTransfer(from, to, amount);
     }
-
-    function _update(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override(ERC20, ERC20Snapshot) {
-        super._update(from, to, amount);
+    
+    // Bridge functions
+    function bridgeMint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
     }
-
-    function nonces(address owner)
-        public
-        view
-        override(ERC20Permit)
-        returns (uint256)
-    {
-        return super.nonces(owner);
-    }
-
-    function decimals() public pure override returns (uint8) {
-        return 18;
+    
+    function bridgeBurn(address from, uint256 amount) external onlyOwner {
+        _burn(from, amount);
     }
 }
