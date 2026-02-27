@@ -1,42 +1,41 @@
 {
-  "genesis_time": "2026-02-27T00:00:00Z",
-  "chain_id": 666,
-  "initial_height": 1,
-  "consensus_params": {
-    "block": {
-      "max_bytes": 10485760,
-      "max_gas": 30000000,
-      "time_iota_ms": 500
-    },
-    "evidence": {
-      "max_age_num_blocks": 100000,
-      "max_age_duration": "504h",
-      "max_bytes": 1048576
-    },
-    "validator": {
-      "pub_key_types": ["ed25519", "secp256k1"]
+  "config": {
+    "chainId": 1337,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "berlinBlock": 0,
+    "londonBlock": 0,
+    "aurexia": {
+      "period": 5,
+      "epoch": 30000
     }
   },
-  "app_hash": "",
-  "app_state": {
-    "accounts": [
-      {
-        "address": "0xE430b07F7B168E77B07b29482DbF89EafA53f484",
-        "balance": "10000000000000000000000000"
-      }
-    ],
-    "validators": [
-      {
-        "address": "0x1111111111111111111111111111111111111111",
-        "pub_key": "0x2222222222222222222222222222222222222222222222222222222222222222",
-        "power": 1000000,
-        "name": "Validator 1",
-        "commission": 500
-      }
-    ],
-    "staking": {
-      "unbonding_time": "504h",
-      "max_validators": 1000
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "gasLimit": "0xe4e1c0",
+  "difficulty": "0x1",
+  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "alloc": {
+    "0x0000000000000000000000000000000000000001": {
+      "balance": "0x1"
+    },
+    "0x0000000000000000000000000000000000000002": {
+      "balance": "0x1"
+    },
+    "0x0000000000000000000000000000000000000003": {
+      "balance": "0x1"
     }
-  }
+  },
+  "number": "0x0",
+  "gasUsed": "0x0",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "baseFeePerGas": "0x3b9aca00"
 }
