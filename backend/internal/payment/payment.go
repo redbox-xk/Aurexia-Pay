@@ -93,4 +93,91 @@ func (s *PaymentService) ListPayments(w http.ResponseWriter, r *http.Request) {
     var payments []Payment
     if err := s.db.Where("from_user_id = ?", claims.UserID).Order("created_at desc").Find(&payments).Error; err != nil {
         http.Error(w, "Failed to fetch payments", http.StatusInternalServerError)
-       
+        return
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(payments)
+}
+
+func (s *PaymentService) GetPayment(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    paymentID := vars["id"]
+    
+    var payment Payment
+    if err := s.db.First(&payment, "id = ?", paymentID).Error; err != nil {
+        http.Error(w, "Payment not found", http.StatusNotFound)
+        return
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(payment)
+}
+
+func (s *PaymentService) ConfirmPayment(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    paymentID := vars["id"]
+    
+    var payment Payment
+    if err := s.db.First(&payment, "id = ?", paymentID).Error; err != nil {
+        http.Error(w, "Payment not found", http.StatusNotFound)
+        return
+    }
+    
+    if payment.Status != "pending" {
+        http.Error(w, "Payment already processed", http.StatusBadRequest)
+        return
+    }
+    
+    // In production, this would verify on-chain confirmation
+    payment.Status = "confirmed"
+    payment.UpdatedAt = time.Now()
+    
+    s.db.Save(&payment)
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(payment)
+}
+
+func (s *PaymentService) processPayment(payment *Payment) {
+    // Simulate blockchain transaction
+    time.Sleep(2 * time.Second)
+    
+    payment.Status = "processing"
+    s.db.Save(payment)
+    
+    // Submit to blockchain
+    time.Sleep(3 * time.Second)
+    
+    payment.Status = "completed"
+    payment.TxHash = "0x" + randomString(64)
+    s.db.Save(payment)
+    
+    // Publish event via WebSocket
+    s.publishPaymentEvent(payment)
+}
+
+func (s *PaymentService) publishPaymentEvent(payment *Payment) {
+    // Publish to Redis for WebSocket distribution
+    ctx := context.Background()
+    event := map[string]interface{}{
+        "type":    "payment_update",
+        "payment": payment,
+    }
+    
+    data, _ := json.Marshal(event)
+    s.redis.Publish(ctx, "payments:"+payment.ID, data)
+}
+
+func generatePaymentID() string {
+    return "pay_" + time.Now().Format("20060102150405") + randomString(6)
+}
+
+func randomString(n int) string {
+    const letters = "0123456789abcdefghijklmnopqrstuvwxyz"
+    b := make([]byte, n)
+    for i := range b {
+        b[i] = letters[i%len(letters)]
+    }
+    return string(b)
+}
