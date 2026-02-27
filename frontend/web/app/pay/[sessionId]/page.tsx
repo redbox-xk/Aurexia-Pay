@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toast'
-import { api } from '@/lib/api/client'
+import api from '@/lib/api/client'
 import { useWeb3 } from '@/lib/web3/hooks'
 import { formatCurrency } from '@/lib/utils/format'
 
