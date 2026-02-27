@@ -113,6 +113,17 @@ class AurexiaClient {
     }
   }
 
+
+  async get(path: string): Promise<{ data: any }> {
+    const response = await this.request<any>('GET', path)
+    return { data: response }
+  }
+
+  async post(path: string, body?: unknown): Promise<{ data: any }> {
+    const response = await this.request<any>('POST', path, body)
+    return { data: response }
+  }
+
   // Payment Intent Operations
   async createPaymentIntent(
     request: CreatePaymentRequest

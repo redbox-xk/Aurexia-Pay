@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { Toaster } from '@/components/ui/toast'
-
-const inter = Inter({ subsets: ['latin'] })
+import '../styles/globals.css'
+import { Toaster } from '@/components/ui/Toaster'
 
 export const metadata: Metadata = {
   title: 'Aurexia Capital - The Ultimate Payment Layer 1 Blockchain',
@@ -30,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="antialiased">
         {children}
         <Toaster />
       </body>
