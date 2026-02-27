@@ -1,184 +1,91 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  # Aurexia Consensus Node
-  aurexia-node:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: aurexia
+      POSTGRES_USER: aurexia
+      POSTGRES_PASSWORD: secure_password_change_me
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - aurexia-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - aurexia-network
+
+  consensus-node:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: aurexia-mainnet
-    environment:
-      - CHAIN_ID=1234
-      - VALIDATORS=21
-      - BLOCK_TIME=500
-      - LOG_LEVEL=info
+      target: consensus
     ports:
-      - "8545:8545"  # RPC
-      - "30333:30333"  # P2P
+      - "30303:30303" # P2P
+      - "8545:8545"   # RPC
+      - "8546:8546"   # WebSocket
     volumes:
-      - aurexia-data:/var/lib/aurexia
-      - ./consensus/config:/app/consensus/config
+      - ./genesis.json:/app/genesis.json
+      - ./config.toml:/app/config.toml
+      - consensus_data:/app/data
     networks:
       - aurexia-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    depends_on:
+      - postgres
+      - redis
 
-  # API Gateway
   api-gateway:
     build:
       context: .
-      dockerfile: infrastructure/docker/backend/Dockerfile
-    container_name: aurexia-api
-    environment:
-      - PORT=8000
-      - ENVIRONMENT=development
-      - CONSENSUS_RPC=http://aurexia-node:8545
-      - LOG_LEVEL=info
+      dockerfile: Dockerfile
+      target: api
     ports:
-      - "8000:8000"
-    depends_on:
-      aurexia-node:
-        condition: service_healthy
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - CONSENSUS_HOST=consensus-node
     networks:
       - aurexia-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  # Payment Processor
-  payment-processor:
-    image: python:3.11-slim
-    container_name: aurexia-payments
-    working_dir: /app
-    command: >
-      bash -c "
-        pip install -q fastapi uvicorn web3 pydantic &&
-        python /app/backend/cmd/payment-processor/main.py
-      "
-    environment:
-      - PYTHONUNBUFFERED=1
-      - API_GATEWAY=http://api-gateway:8000
-      - LOG_LEVEL=info
-    ports:
-      - "8001:8000"
-    volumes:
-      - .:/app
     depends_on:
-      - api-gateway
-    networks:
-      - aurexia-network
-    restart: unless-stopped
+      - consensus-node
 
-  # Frontend (Next.js)
   frontend:
     build:
-      context: ./frontend/web
+      context: .
       dockerfile: Dockerfile
-    container_name: aurexia-frontend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - NEXT_PUBLIC_RPC_URL=http://localhost:8545
+      target: frontend
     ports:
       - "3000:3000"
+    networks:
+      - aurexia-network
     depends_on:
       - api-gateway
-    networks:
-      - aurexia-network
-    restart: unless-stopped
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: aurexia-db
-    environment:
-      - POSTGRES_DB=aurexia
-      - POSTGRES_USER=aurexia
-      - POSTGRES_PASSWORD=aurexia_secure_pass_2026
+  nginx:
+    image: nginx:alpine
     ports:
-      - "5432:5432"
+      - "80:80"
+      - "443:443"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/build:/usr/share/nginx/html
     networks:
       - aurexia-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aurexia"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: aurexia-cache
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - aurexia-network
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  # Prometheus Monitoring
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: aurexia-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    networks:
-      - aurexia-network
-    restart: unless-stopped
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-
-  # Grafana Dashboards
-  grafana:
-    image: grafana/grafana:latest
-    container_name: aurexia-grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=aurexia2026
-      - GF_USERS_ALLOW_SIGN_UP=false
-    ports:
-      - "3001:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-    networks:
-      - aurexia-network
-    restart: unless-stopped
     depends_on:
-      - prometheus
-
-volumes:
-  aurexia-data:
-    driver: local
-  postgres-data:
-    driver: local
-  redis-data:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
+      - frontend
+      - api-gateway
 
 networks:
   aurexia-network:
     driver: bridge
 
+volumes:
+  postgres_data:
+  consensus_data:
