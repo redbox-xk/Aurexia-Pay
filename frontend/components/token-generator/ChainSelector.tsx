@@ -1,23 +1,48 @@
-'use client'
+import React from 'react';
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-
-export function ChainSelector({ config, setConfig, onNext, onBack }) {
-  const [selectedChains, setSelectedChains] = useState(config.chains)
-  const chains = [
-    { id: 'AUREXIA_MAINNET', name: 'Aurexia Mainnet', fee: 1000, active: true },
-    { id: 'ETHEREUM', name: 'Ethereum', fee: 500, active: true },
-    { id: 'POLYGON', name: 'Polygon', fee: 500, active: true }
-  ]
-
-  return (
-    <Card>
-      <CardHeader><CardTitle>Select Chains</CardTitle><CardDescription>Choose which blockchains to deploy your token on</CardDescription></CardHeader>
-      <CardContent>{chains.map((chain) => <div key={chain.id} className="flex items-center gap-2 py-2"><Checkbox checked={selectedChains.includes(chain.id)} onCheckedChange={() => setSelectedChains((prev) => prev.includes(chain.id) ? prev.filter((c) => c !== chain.id) : [...prev, chain.id])} /><span>{chain.name}</span></div>)}</CardContent>
-      <CardFooter className="flex justify-between"><Button variant="outline" onClick={onBack}>Back</Button><Button variant="gold" onClick={() => { setConfig({ ...config, chains: selectedChains }); onNext(); }}>Next: Review & Deploy</Button></CardFooter>
-    </Card>
-  )
+interface Chain {
+  id: number;
+  name: string;
+  icon?: string;
+  active: boolean;
 }
+
+interface ChainSelectorProps {
+  selectedChain: number;
+  onSelectChain: (chainId: number) => void;
+}
+
+export const ChainSelector: React.FC<ChainSelectorProps> = ({
+  selectedChain,
+  onSelectChain,
+}) => {
+  const chains: Chain[] = [
+    { id: 1, name: 'Ethereum', active: true },
+    { id: 56, name: 'BNB Chain', active: true },
+    { id: 137, name: 'Polygon', active: true },
+    { id: 43114, name: 'Avalanche', active: true },
+    { id: 42161, name: 'Arbitrum', active: true },
+    { id: 10, name: 'Optimism', active: true },
+  ];
+  
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {chains.map((chain) => (
+        <button
+          key={chain.id}
+          onClick={() => onSelectChain(chain.id)}
+          className={`p-3 rounded-lg border-2 transition-all ${
+            selectedChain === chain.id
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700">{chain.name}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+};
