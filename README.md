@@ -35,7 +35,7 @@ text
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/aurexia-pay.git
+git clone https://github.com/redbox-xk/aurexia-pay.git
 cd aurexia-pay
 Install dependencies:
 
