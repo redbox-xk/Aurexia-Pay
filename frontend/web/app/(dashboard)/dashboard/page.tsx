@@ -1,204 +1,323 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from '@/components/ui/toast'
-import { api } from '@/lib/api/client'
 import { useWeb3 } from '@/lib/web3/hooks'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 
+const fetcher = (url: string) => fetch(url).then(res => res.json())
+
 export default function DashboardPage() {
-  const { account, balance, connect } = useWeb3()
-  const [payments, setPayments] = useState<any[]>([])
+  const { account, balance, connect, disconnect, isConnected } = useWeb3()
   const [loading, setLoading] = useState(false)
   const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('usd')
-  const [isLoading, setIsLoading] = useState(true)
+  const [currency, setCurrency] = useState('USD')
 
-  useEffect(() => {
-    setIsLoading(false)
-  }, [])
+  // Fetch dashboard stats with SWR
+  const { data: statsData, error: statsError, isLoading: statsLoading } = useSWR(
+    '/api/dashboard/stats',
+    fetcher,
+    { refreshInterval: 30000 }
+  )
 
-  const fetchPayments = async () => {
-    try {
-      const response = await api.get('/api/v1/payments')
-      setPayments(response.data.data || [])
-    } catch (error) {
-      console.error('[v0] Error fetching payments:', error)
-    }
+  // Fetch transactions with SWR
+  const { data: txData, error: txError, mutate: mutateTx } = useSWR(
+    '/api/transactions',
+    fetcher
+  )
+
+  const stats = statsData?.data || {
+    transactions: { total: 0, volume: 0, todayCount: 0, todayVolume: 0 },
+    users: { total: 0 },
+    merchants: { total: 0 }
   }
 
-  const createPayment = async () => {
-    if (!account) {
-      toast({ title: 'Error', description: 'Please connect your wallet first', variant: 'destructive' })
-      return
-    }
+  const transactions = txData?.data || []
 
+  const createTransaction = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      toast({ title: 'Error', description: 'Please enter a valid amount', variant: 'destructive' })
       return
     }
 
     setLoading(true)
     try {
-      const response = await api.post('/api/v1/payments', {
-        amount: parseFloat(amount) * 100,
-        currency,
-        customer_email: account,
-        metadata: { wallet: account }
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          currency,
+          payment_method: 'crypto',
+          metadata: { wallet: account }
+        })
       })
-
-      toast({ title: 'Success', description: 'Payment created successfully!' })
-      fetchPayments()
-      setAmount('')
+      
+      if (response.ok) {
+        mutateTx()
+        setAmount('')
+      }
     } catch (error) {
-      console.error('[v0] Payment creation error:', error)
-      toast({ title: 'Error', description: 'Failed to create payment', variant: 'destructive' })
+      console.error('[v0] Transaction creation error:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const stats = [
-    { title: 'Total Volume', value: '$124.5k', description: 'All time volume', icon: '💰' },
-    { title: 'Transactions', value: '1,234', description: 'Total payments', icon: '🔄' },
-    { title: 'Success Rate', value: '99.2%', description: 'Payment success', icon: '✅' },
-    { title: 'Wallet Balance', value: balance ? `${balance} ETH` : '—', description: 'Current balance', icon: '🪙' },
+  const statCards = [
+    { 
+      title: 'Total Volume', 
+      value: formatCurrency(stats.transactions.volume, 'USD'),
+      description: 'All time volume',
+      icon: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    { 
+      title: 'Transactions', 
+      value: stats.transactions.total.toLocaleString(),
+      description: 'Total payments',
+      icon: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      )
+    },
+    { 
+      title: 'Today', 
+      value: formatCurrency(stats.transactions.todayVolume, 'USD'),
+      description: `${stats.transactions.todayCount} transactions`,
+      icon: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+      )
+    },
+    { 
+      title: 'Wallet Balance', 
+      value: isConnected ? `${parseFloat(balance || '0').toFixed(4)} ETH` : '---',
+      description: isConnected ? 'Connected' : 'Not connected',
+      icon: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+      )
+    },
   ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 animate-slideIn">
-        <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's your payment overview.</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {isLoading
-          ? Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)
-          : stats.map((stat, i) => (
-              <Card key={i} className="animate-slideIn" style={{ animationDelay: `${i * 100}ms` }}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center justify-between">
-                    <span>{stat.title}</span>
-                    <span className="text-2xl">{stat.icon}</span>
-                  </CardTitle>
-                  <CardDescription className="text-xs">{stat.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-primary">{stat.value}</p>
-                </CardContent>
-              </Card>
-            ))}
-      </div>
-
-      {/* Wallet Status */}
-      {account && (
-        <Card className="mb-8 animate-slideIn border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="text-lg">Wallet Connected</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Account</p>
-              <p className="font-mono text-sm">{account}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => {}}>
-              Disconnect
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Main Actions */}
-      <div className="grid md:grid-cols-2 gap-8">
-        <Card className="animate-slideIn">
-          <CardHeader>
-            <CardTitle>Create Payment</CardTitle>
-            <CardDescription>Generate a new payment link</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="100.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={!account}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+          <div className="animate-slideIn">
+            <div className="flex items-center gap-3 mb-2">
+              <Image
+                src="/images/nexa-logo.png"
+                alt="Nexa"
+                width={40}
+                height={40}
+                className="rounded-lg"
               />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                className="w-full px-3 py-2 border rounded-md bg-background transition-smooth disabled:opacity-50"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                disabled={!account}
-              >
-                <option value="usd">USD</option>
-                <option value="eur">EUR</option>
-                <option value="gbp">GBP</option>
-              </select>
-            </div>
-            {!account ? (
-              <Button className="w-full" onClick={connect} variant="outline">
-                Connect Wallet First
-              </Button>
+            <p className="text-slate-600">Welcome back! Here is your payment overview.</p>
+          </div>
+          
+          <div className="flex items-center gap-3 animate-slideIn" style={{ animationDelay: '100ms' }}>
+            {isConnected ? (
+              <div className="flex items-center gap-2">
+                <Badge className="bg-cyan-500/10 text-cyan-600 border-cyan-500/20 font-mono text-xs">
+                  {account?.slice(0, 6)}...{account?.slice(-4)}
+                </Badge>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={disconnect}
+                  className="border-slate-300"
+                >
+                  Disconnect
+                </Button>
+              </div>
             ) : (
-              <Button className="w-full" onClick={createPayment} disabled={loading || !amount}>
-                {loading ? 'Creating...' : 'Create Payment'}
+              <Button 
+                onClick={connect}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/25"
+              >
+                Connect Wallet
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="animate-slideIn">
-          <CardHeader>
-            <CardTitle>Recent Payments</CardTitle>
-            <CardDescription>Your latest transactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 max-h-96 overflow-auto">
-              {payments.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 text-sm">
-                  No payments yet. Create one to get started!
-                </p>
-              ) : (
-                payments.slice(0, 5).map((payment, i) => (
-                  <div
-                    key={payment.id}
-                    className="flex justify-between items-center p-3 bg-muted rounded-lg hover:bg-muted/80 transition-smooth"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    <div>
-                      <p className="font-medium text-sm font-mono">{payment.id?.slice(0, 8)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(payment.created)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-sm">
-                        {formatCurrency(payment.amount / 100, payment.currency || 'usd')}
-                      </p>
-                      <Badge variant="default" className="text-xs mt-1">
-                        Completed
-                      </Badge>
-                    </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {statsLoading
+            ? Array(4).fill(0).map((_, i) => (
+                <Card key={i} className="bg-white border-slate-200">
+                  <CardHeader className="pb-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16 mt-1" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-32" />
+                  </CardContent>
+                </Card>
+              ))
+            : statCards.map((stat, i) => (
+                <Card 
+                  key={i} 
+                  className="bg-white border-slate-200 hover:shadow-lg hover:shadow-cyan-500/5 transition-all duration-300 animate-slideIn"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-slate-600 flex items-center justify-between">
+                      <span>{stat.title}</span>
+                      {stat.icon}
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500">{stat.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Create Transaction */}
+          <Card className="bg-white border-slate-200 animate-slideIn" style={{ animationDelay: '200ms' }}>
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-900">Create Transaction</CardTitle>
+              <CardDescription>Process a new payment</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount" className="text-slate-700">Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="100.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="border-slate-300 focus:border-cyan-500 focus:ring-cyan-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency" className="text-slate-700">Currency</Label>
+                <select
+                  id="currency"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-slate-900 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="ETH">ETH</option>
+                  <option value="USDC">USDC</option>
+                </select>
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/25"
+                onClick={createTransaction}
+                disabled={loading || !amount}
+              >
+                {loading ? 'Processing...' : 'Create Transaction'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Transactions */}
+          <Card className="bg-white border-slate-200 animate-slideIn" style={{ animationDelay: '300ms' }}>
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-900">Recent Transactions</CardTitle>
+              <CardDescription>Your latest activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-80 overflow-auto">
+                {transactions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p className="text-slate-500 text-sm">No transactions yet</p>
+                    <p className="text-slate-400 text-xs mt-1">Create one to get started</p>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                ) : (
+                  transactions.slice(0, 6).map((tx: any, i: number) => (
+                    <div
+                      key={tx.id}
+                      className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-slate-900 font-mono">
+                            {tx.id?.slice(0, 8)}...
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {formatDate(tx.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm text-slate-900">
+                          {formatCurrency(tx.amount, tx.currency || 'USD')}
+                        </p>
+                        <Badge 
+                          className={`text-xs ${
+                            tx.status === 'completed' 
+                              ? 'bg-green-100 text-green-700 border-green-200' 
+                              : tx.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {tx.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 animate-slideIn" style={{ animationDelay: '400ms' }}>
+          {[
+            { label: 'Payments', href: '/dashboard/payments', icon: '💳' },
+            { label: 'Invoices', href: '/dashboard/invoices', icon: '📄' },
+            { label: 'NFC Cards', href: '/dashboard/nfc-cards', icon: '📱' },
+            { label: 'Analytics', href: '/dashboard/analytics', icon: '📊' },
+          ].map((action, i) => (
+            <a
+              key={i}
+              href={action.href}
+              className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:shadow-lg hover:shadow-cyan-500/5 hover:border-cyan-500/30 transition-all duration-300"
+            >
+              <span className="text-2xl">{action.icon}</span>
+              <span className="font-medium text-slate-900">{action.label}</span>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   )

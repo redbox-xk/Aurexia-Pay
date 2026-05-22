@@ -1,26 +1,33 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import './globals.css'
+import '@/styles/globals.css'
 import { Toaster } from '@/components/ui/Toaster'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Aurexia Capital - The Ultimate Payment Layer 1 Blockchain',
-  description: 'Stripe-like simplicity • Visa-scale throughput • 99.999% uptime • 100,000 TPS',
-  keywords: ['blockchain', 'payments', 'layer1', 'crypto', 'defi'],
+  title: 'Nexa Payment Crypto - Instant Payments. On-Chain Settlement.',
+  description: 'Military-grade security meets lightning-fast crypto payments. The future of payments is here.',
+  keywords: ['crypto payments', 'blockchain', 'instant payments', 'on-chain settlement', 'defi', 'web3'],
   openGraph: {
-    title: 'Aurexia Capital',
-    description: 'The Ultimate Payment Layer 1 Blockchain',
+    title: 'Nexa Payment Crypto',
+    description: 'Instant Payments. On-Chain Settlement.',
     type: 'website',
-    url: 'https://aurexia.capital',
-    siteName: 'Aurexia Capital',
+    url: 'https://nexa.payment',
+    siteName: 'Nexa Payment Crypto',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aurexia Capital',
-    description: 'The Ultimate Payment Layer 1 Blockchain',
+    title: 'Nexa Payment Crypto',
+    description: 'Military-grade security meets lightning-fast crypto payments.',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#00D4FF',
 }
 
 export default function RootLayout({
@@ -29,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" className="bg-background" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
         {children}
         <Toaster />
       </body>
